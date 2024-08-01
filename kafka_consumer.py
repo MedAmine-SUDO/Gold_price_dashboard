@@ -1,50 +1,48 @@
-from confluent_kafka import Consumer, KafkaException
 import json
+import uuid
+from confluent_kafka import Consumer, KafkaException
 
-# Configuration for the Kafka consumer
-conf = {
-    'bootstrap.servers': 'localhost:9092',
-    'group.id': 'gold_price_consumer',  
-    'auto.offset.reset': 'earliest', 
-    'enable.auto.commit': True  
-}
+KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'  
+KAFKA_TOPIC = 'gold_prices'  
 
-# Initialize Kafka consumer
-consumer = Consumer(conf)
+# Generate a unique consumer group ID
+consumer_group_id = f"gold-price-consumer-group-{uuid.uuid4()}"
 
-# Subscribe to the 'gold_price' topic
-consumer.subscribe(['gold-price'])
+def consume_from_kafka():
+    # Initialize Kafka consumer
+    consumer = Consumer({
+        'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
+        'group.id': consumer_group_id,
+        'auto.offset.reset': 'earliest'  
+    })
 
-try:
-    while True:
-        # Poll for a message
-        msg = consumer.poll(timeout=1.0)
+    consumer.subscribe([KAFKA_TOPIC])
 
-        if msg is None:
-            continue  
+    try:
+        while True:
+            msg = consumer.poll(1.0)  # Timeout of 1 second
 
-        if msg.error():
-            if msg.error().code() == KafkaError._PARTITION_EOF:
-                # End of partition event
-                print('%% %s [%d] reached end at offset %d\n' % (msg.topic(), msg.partition(), msg.offset()))
-            else:
-                # Handle other Kafka errors
-                print(f"Kafka error: {msg.error()}")
+            if msg is None:
                 continue
-        else:
-            # Message received successfully
+            
+            if msg.error():
+                # Handle any errors
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    # End of partition event
+                    continue
+                else:
+                    print(f"Error occurred: {msg.error()}")
+                    break
+            
+            # Message is valid
             gold_data = json.loads(msg.value().decode('utf-8'))
-            print("Received gold price data:")
-            for item in gold_data:
-                print(f"Category: {item['category']}")
-                print(f"Current Price: {item['current_price']}")
-                print(f"Open Price: {item['open_price']}")
-                print(f"Price Change: {item['price_change']}")
-                print(f"Percent Change: {item['percent_change']}")
-                print(f"High Price: {item['high_price']}")
-                print(f"Low Price: {item['low_price']}")
-except KeyboardInterrupt:
-    pass
-finally:
-    # Close the consumer on exit
-    consumer.close()                
+            print(f'Received message: {gold_data}')
+
+    except KeyboardInterrupt:
+        print("Consumer interrupted by user")
+    except KafkaException as e:
+        print(f"Kafka error: {e}")
+    
+
+if __name__ == "__main__":
+    consume_from_kafka()

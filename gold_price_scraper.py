@@ -5,7 +5,7 @@ import json
 import time
 
 KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
-KAFKA_TOPIC = 'gold-price'
+KAFKA_TOPIC = 'gold_prices'
 
 # Function to extract gold prices
 def get_gold_price():
@@ -59,7 +59,8 @@ def publish_to_kafka(gold_data):
 
     try:
         producer.produce(KAFKA_TOPIC, value=json.dumps(gold_data).encode('utf-8'))
-        producer.flush()
+        print('published to kafka topic')
+        
     except Exception as e:
         print(f"Error publishing to Kafka: {e}")
 
@@ -68,5 +69,5 @@ while True:
     gold_data = get_gold_price()
     print(gold_data)
     publish_to_kafka(gold_data)
-    print('published to kafka topic')
+    
     time.sleep(5)
