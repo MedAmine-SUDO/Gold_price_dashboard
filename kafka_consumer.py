@@ -1,48 +1,58 @@
-import json
-import uuid
-from confluent_kafka import Consumer, KafkaException
+from confluent_kafka import Consumer, KafkaError
+import time
+from datetime import datetime
+import random
 
-KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'  
-KAFKA_TOPIC = 'gold_prices'  
+# Configuration
+kafka_host = 'localhost:9092'
+topic = 'gold-topic'  # Ensure this matches the producer's topic
+group_name = 'consumer-group1'
 
-# Generate a unique consumer group ID
-consumer_group_id = f"gold-price-consumer-group-{uuid.uuid4()}"
+# Consumer configuration
+conf = {
+    'bootstrap.servers': kafka_host,
+    'group.id': group_name,
+    'auto.offset.reset': 'earliest'  # Start reading at the earliest message
+}
 
-def consume_from_kafka():
-    # Initialize Kafka consumer
-    consumer = Consumer({
-        'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-        'group.id': consumer_group_id,
-        'auto.offset.reset': 'earliest'  
-    })
+# Create a Kafka consumer instance
+consumer = Consumer(conf)
 
-    consumer.subscribe([KAFKA_TOPIC])
+# Subscribe to the topic
+consumer.subscribe([topic])
 
-    try:
-        while True:
-            msg = consumer.poll(1.0)  # Timeout of 1 second
+print(f"Listening to topic {topic}...")
 
-            if msg is None:
+try:
+    while True:
+        # Poll for new messages
+        msg = consumer.poll(10.0)  # Wait for up to 10 seconds for a message
+        if msg is None:
+            continue
+        if msg.error():
+            if msg.error().code() == KafkaError._PARTITION_EOF:
+                # End of partition event
                 continue
-            
-            if msg.error():
-                # Handle any errors
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    # End of partition event
-                    continue
-                else:
-                    print(f"Error occurred: {msg.error()}")
-                    break
-            
-            # Message is valid
-            gold_data = json.loads(msg.value().decode('utf-8'))
-            print(f'Received message: {gold_data}')
+            else:
+                print(f"Error consuming: {msg.error()}")
+                break
 
-    except KeyboardInterrupt:
-        print("Consumer interrupted by user")
-    except KafkaException as e:
-        print(f"Kafka error: {e}")
-    
+        # Get current time formatted as seconds and milliseconds
+        current_time = datetime.now().strftime('%S:%f')[:-3]  # Get seconds and milliseconds
 
-if __name__ == "__main__":
-    consume_from_kafka()
+        # Process the message
+        message_value = msg.value().decode('utf-8')
+        print(f"Consumed message: {message_value} partition {msg.partition()} at {current_time}")
+        
+        # Optional: Parse the message if needed
+        # For example, if you want to extract specific fields from the message
+        # You can split the message or use JSON parsing if the message is in JSON format
+
+        time.sleep(random.randint(0, 100) / 1000.0)  # Sleep for a random time between 0 and 100 milliseconds
+
+except KeyboardInterrupt:
+    print("Consumer interrupted by user.")
+
+finally:
+    # Close the consumer
+    consumer.close()
