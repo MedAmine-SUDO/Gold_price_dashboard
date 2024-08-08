@@ -21,3 +21,5 @@ services:
             - DELETE_TOPIC_ENABLE=true
         depends_on:
             - zookeeper
+
+            

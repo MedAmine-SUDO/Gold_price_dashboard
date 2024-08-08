@@ -26,46 +26,39 @@ def delivery_report(err, msg):
 def get_gold_price():
     url = 'https://www.livepriceofgold.com/fr/tunisia-gold-price.html'
     response = requests.get(url)
+
+    # Check if the request was successful
+    if response.status_code != 200:
+        return f"Failed to retrieve data: {response.status_code}"
+
     soup = BeautifulSoup(response.content, "html.parser")
 
-    # Extract data for each gold price category
-    gold_data = []
+    # Extract prices per gram
+    gold_data = {}
+    gram_section = soup.find('img', alt="Prix de l'or par gramme").find_parent('li')
+    if gram_section:
+        current_price = gram_section.find('span', class_='kurfiyati').get_text(strip=True)
+        open_price = gram_section.find('span', class_='kurfiyati')['data-open']
+        price_change = gram_section.find('b', id='GXAUUSD_CHANGE')
+        price_change_percent = gram_section.find('b', id='GXAUUSD_CLASS')
 
-    # Iterate over each list item
-    for li in soup.select('ul.head-ul > li'):
-       category_img = li.find('img')
-       if category_img:
-          category = category_img.get('alt', 'Unknown category')
+        # Handle potential None values
+        price_change = price_change.get_text(strip=True) if price_change else '0'
+        price_change_percent = price_change_percent.get_text(strip=True) if price_change_percent else '0'
 
-       current_price_span = li.select_one('.kurfiyati')
-       if current_price_span:
-          current_price = current_price_span.get_text(strip=True)
-          open_price = current_price_span.get('data-open', 'N/A')
-
-       price_change_span = li.select_one('[id$="_CHANGE"]')
-       price_change = price_change_span.get_text(strip=True) if price_change_span else 'N/A'
-
-       percent_change_span = li.select_one('[id$="_PERCENT"]')
-       percent_change = percent_change_span.get_text(strip=True) if percent_change_span else 'N/A'
-
-       high_low = li.select('.kurbaslik b')
-       if len(high_low) == 2:
-          high_price = high_low[0].get_text(strip=True)
-          low_price = high_low[1].get_text(strip=True)
-       else:
-          high_price = low_price = 'N/A'
-
-       gold_data.append({
-        'category': category,
-        'current_price': current_price,
-        'open_price': open_price,
-        'price_change': price_change,
-        'percent_change': percent_change,
-        'high_price': high_price,
-        'low_price': low_price
-        })
-
-    return(gold_data)
+        # high_price and low_price are available in the last two bold tags
+        high_price = gram_section.find_all('b')[-2].get_text(strip=True)
+        low_price = gram_section.find_all('b')[-1].get_text(strip=True)
+        gold_data = {
+            'category': "Prix de l'or par gramme",
+            'current_price': current_price,
+            'open_price': open_price,
+            'price_change': price_change,
+            'percent_change': price_change_percent,
+            'high_price': high_price,
+            'low_price': low_price
+        }
+    return gold_data
 
 
 # Main loop to scrape and send messages
@@ -73,10 +66,10 @@ i = 0
 try:
     while True:
         # Get gold prices
-        gold_prices = get_gold_price()
+        gold_price = get_gold_price()
         
-        # Create a meaningful message value
-        message_value = json.dumps(gold_prices, indent=4)  # Convert the list to a JSON string
+        # Sérialiser le dictionnaire en JSON
+        message_value = json.dumps(gold_price).encode('utf-8')  
         message_key = str(i)
 
         # Produce a message
