@@ -1,34 +1,64 @@
-version: '3'
-
+version: "3.7"
 services:
   zookeeper:
-    image: zookeeper:latest
-    container_name: container_zookeeper
-    ports:
-      - "2181:2181"
-      - "2888:2888"
-      - "3888:3888"
+    image: confluentinc/cp-zookeeper:5.5.3
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka:
-    image: debezium/kafka:latest
-    container_name: container_broker
-    ports:
-      - "9092:9092"
-    environment:
-      ZOOKEEPER_CONNECT: zookeeper:2181  
+    image: confluentinc/cp-enterprise-kafka:5.5.3
     depends_on:
       - zookeeper
-
-  timescaledb:
-    image: timescale/timescaledb:latest-pg14  
-    container_name: container_timescaledb
     ports:
-      - "127.0.0.1:5433:5432"  
+      - 29092:29092
     environment:
-      POSTGRES_PASSWORD: houssem  
-    volumes:
-      - timescaledb_data:/var/lib/postgresql/data  
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
 
+  debezium:
+    image: debezium/connect:1.4
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    depends_on: 
+      - kafka
+    ports:
+      - 8083:8083
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.5.3
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+      - SCHEMA_REGISTRY_LISTENERS=http://schema-registry:8081,http://localhost:8081
+    ports:
+      - 8081:8081
+    depends_on: 
+      - zookeeper
+      - kafka
+  
+  kafka_manager:
+    image: hlebalbau/kafka-manager:stable
+    restart: always
+    ports:
+      - "9000:9000"
+    depends_on:
+      - zookeeper
+      - kafka
+    environment:
+      ZK_HOSTS: "zookeeper:2181"
+      APPLICATION_SECRET: "random-secret"
+    command: -Dpidfile.path=/dev/null
+   
   connect:
     image: debezium/connect:latest
     container_name: container_kafka_connect
@@ -44,13 +74,24 @@ services:
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-      CONNECT_PLUGIN_PATH: /kafka/plugins  # Set the plugin path
+      CONNECT_PLUGIN_PATH: /kafka/plugins  
     volumes:
-      - C:\Users\houss\Desktop\github-project\Gold_price_dashboard\plugins:/kafka/plugins  # Mount the plugins directory
+      - C:\Users\houss\Desktop\github-project\Gold_price_dashboard\plugins:/kafka/plugins  
     depends_on:
       - zookeeper
       - kafka
       - timescaledb
+
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14  
+    container_name: container_timescaledb
+    ports:
+      - "127.0.0.1:5433:5432"  
+    environment:
+      POSTGRES_PASSWORD: houssem  
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
 
 volumes:
   timescaledb_data:

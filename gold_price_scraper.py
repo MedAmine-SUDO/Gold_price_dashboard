@@ -7,7 +7,7 @@ import time
 import logging
 
 # Configuration
-kafka_host = 'localhost:9092'
+kafka_host = 'localhost:29092'
 topic = 'gold-topic'
 
 # Set up logging
