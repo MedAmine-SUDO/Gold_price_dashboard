@@ -76,7 +76,7 @@ try:
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
                 """
             cursor.execute(insert_query, (
-                current_time,  # current_time est déjà un datetime
+                current_time,  
                 data['category'],
                 float(data['current_price']),  
                 float(data['open_price']),      

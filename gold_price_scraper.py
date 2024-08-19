@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -50,13 +51,14 @@ def get_gold_price():
         high_price = gram_section.find_all('b')[-2].get_text(strip=True)
         low_price = gram_section.find_all('b')[-1].get_text(strip=True)
         gold_data = {
+            'time': datetime.now().isoformat(),
             'category': "Prix de l'or par gramme",
-            'current_price': current_price,
-            'open_price': open_price,
-            'price_change': price_change,
-            'percent_change': price_change_percent,
-            'high_price': high_price,
-            'low_price': low_price
+            'current_price': float(current_price),
+            'open_price': float(open_price),
+            'price_change': float(price_change),
+            'percent_change': float(price_change_percent),
+            'high_price': float(high_price),
+            'low_price': float(low_price)
         }
     return gold_data
 

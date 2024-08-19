@@ -1,0 +1,18 @@
+{
+  "name": "timescaledb-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "tasks.max": "1",
+    "topics": "gold-topic",
+    "connection.url": "jdbc:postgresql://timescaledb:5433/postgres",
+    "connection.user": "postgres",
+    "connection.password": "houssem",
+    "auto.create": "false",
+    "auto.evolve": "true",
+    "insert.mode": "insert",
+    "pk.mode": "record_key",
+    "pk.fields": "id",
+    "table.name.format": "gold_prices",
+    "fields.whitelist": "id,time,category,current_price,open_price,price_change,percent_change,high_price,low_price"
+  }
+}

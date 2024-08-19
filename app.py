@@ -6,12 +6,12 @@ import plotly.express as px
 
 # Database configuration
 db_host = 'localhost'
-db_name = 'gold_prices'
+db_name = 'postgres'
 db_user = 'postgres'
-db_password = 'password'
+db_password = 'houssem'
 
 # Create the database connection URL
-db_url = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
+db_url = f"postgresql://{db_user}:{db_password}@{db_host}:5433/{db_name}"
 
 # Create a database connection
 engine = create_engine(db_url)
