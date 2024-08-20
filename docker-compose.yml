@@ -18,21 +18,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
 
-  debezium:
-    image: debezium/connect:1.4
-    environment:
-      BOOTSTRAP_SERVERS: kafka:9092
-      GROUP_ID: 1
-      CONFIG_STORAGE_TOPIC: connect_configs
-      OFFSET_STORAGE_TOPIC: connect_offsets
-      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-    depends_on: 
-      - kafka
-    ports:
-      - 8083:8083
+  
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.5.3
@@ -60,7 +46,7 @@ services:
     command: -Dpidfile.path=/dev/null
    
   connect:
-    image: debezium/connect:latest
+    image: debezium/connect:1.4
     container_name: container_kafka_connect
     ports:
       - "8083:8083"
@@ -87,7 +73,7 @@ services:
     image: timescale/timescaledb:latest-pg14  
     container_name: container_timescaledb
     ports:
-      - "127.0.0.1:5433:5432"  
+      - "5433:5432"  
     environment:
       POSTGRES_PASSWORD: houssem  
     volumes:

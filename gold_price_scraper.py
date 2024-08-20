@@ -52,7 +52,7 @@ def get_gold_price():
         low_price = gram_section.find_all('b')[-1].get_text(strip=True)
         gold_data = {
             'time': datetime.now().isoformat(),
-            'category': "Prix de l'or par gramme",
+            'category': "Prix de l or par gramme",
             'current_price': float(current_price),
             'open_price': float(open_price),
             'price_change': float(price_change),

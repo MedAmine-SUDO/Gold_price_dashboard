@@ -6,15 +6,16 @@ import psycopg2
 import json
 
 # Configuration
-kafka_host = 'localhost:9092'
+kafka_host = 'localhost:29092'
 topic = 'gold-topic'  # Ensure this matches the producer's topic
 group_name = 'consumer-group1'
 
 # TimescaleDB configuration
 db_host = 'localhost'
-db_name = 'gold_prices'
+db_name = 'postgres'
 db_user = 'postgres'
-db_password = 'password'
+db_password = 'houssem'
+db_port = 5433
 
 # Consumer configuration
 conf = {
@@ -37,7 +38,8 @@ try:
         host=db_host,
         database=db_name,
         user=db_user,
-        password=db_password
+        password=db_password,
+        port= db_port
     )
     cursor = conn.cursor()
     print("Connected to TimescaleDB.")
@@ -71,24 +73,22 @@ try:
 
         # Insérer le message dans TimescaleDB
         try:
-            insert_query = """
-                INSERT INTO gold_prices (time, category, current_price, open_price, price_change, percent_change, high_price, low_price)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-                """
+            insert_query = """INSERT INTO gold_prices (time, category, current_price, open_price, price_change, percent_change, high_price, low_price) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"""                  
             cursor.execute(insert_query, (
-                current_time,  
+                data['time'],  
                 data['category'],
-                float(data['current_price']),  
-                float(data['open_price']),      
-                float(data['price_change']),    
-                data['percent_change'],          
-                float(data['high_price']),       
-                float(data['low_price'])         
+                data['current_price'],  
+                data['open_price'],      
+                data['price_change'],
+                data['percent_change'],             
+                data['high_price'],       
+                data['low_price']         
             ))
             conn.commit()  
             print("Inserted message into TimescaleDB.")
         except Exception as e:
             print(f"Error inserting into TimescaleDB: {e}")
+            print(f"SQL Query: {insert_query}") 
             conn.rollback()  
         
         
