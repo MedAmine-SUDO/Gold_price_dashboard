@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.5.3
@@ -76,8 +76,10 @@ services:
       - "5433:5432"  
     environment:
       POSTGRES_PASSWORD: houssem  
+      
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
+
 
 volumes:
   timescaledb_data:

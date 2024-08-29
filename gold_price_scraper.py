@@ -6,9 +6,15 @@ from confluent_kafka import Producer
 import time
 import logging
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
+
 # Configuration
-kafka_host = 'localhost:29092'
-topic = 'gold-topic'
+kafka_host = os.getenv('KAFKA_HOST')
+topic = os.getenv('KAFKA_TOPIC')
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

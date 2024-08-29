@@ -5,23 +5,29 @@ import random
 import psycopg2
 import json
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
+
 # Configuration
-kafka_host = 'localhost:29092'
-topic = 'gold-topic'  # Ensure this matches the producer's topic
+kafka_host = os.getenv('KAFKA_HOST')
+topic = os.getenv('KAFKA_TOPIC')  
 group_name = 'consumer-group1'
 
 # TimescaleDB configuration
-db_host = 'localhost'
-db_name = 'postgres'
-db_user = 'postgres'
-db_password = 'houssem'
-db_port = 5433
+db_host = os.getenv('KAFKA_HOST')
+db_name = os.getenv('DB_NAME')
+db_user = os.getenv('DB_USER')
+db_password = os.getenv('DB_PASSWORD')
+db_port = os.getenv('DB_PORT')
 
 # Consumer configuration
 conf = {
     'bootstrap.servers': kafka_host,
     'group.id': group_name,
-    'auto.offset.reset': 'earliest'  # Start reading at the earliest message
+    'auto.offset.reset': 'earliest'  
 }
 
 # Create a Kafka consumer instance
@@ -93,7 +99,7 @@ try:
         
         
 
-        time.sleep(random.randint(0, 100) / 1000.0)  # Sleep for a random time between 0 and 100 milliseconds
+        time.sleep(random.randint(0, 100) / 1000.0)  
 
 except KeyboardInterrupt:
     print("Consumer interrupted by user.")
